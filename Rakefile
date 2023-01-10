@@ -10,7 +10,7 @@ if windows
   COPY = 'copy'
   DEL = 'del'
 else
-  MAKE = 'make'
+  MAKE = 'make -j'
   SLASH = '/'
   COPY = 'cp'
   DEL = 'rm'
@@ -46,20 +46,20 @@ def clear_version
   end
 end
 
-task :build_examples do
-  # Go into the examples directory and look for all the makefiles and build them
-  Dir['examples/**/makefile'].each do |file|
-    if windows
-      system("cd #{File.dirname(file).gsub('/', '\\')} && #{MAKE}")
-    else
-      system("cd #{File.dirname(file)} && #{MAKE}")
-    end
-  end
-end
+# task :build_examples do
+#   # Go into the examples directory and look for all the makefiles and build them
+#   Dir['examples/**/makefile'].each do |file|
+#     if windows
+#       system("cd #{File.dirname(file).gsub('/', '\\')} && #{MAKE}")
+#     else
+#       system("cd #{File.dirname(file)} && #{MAKE}")
+#     end
+#   end
+# end
 
-task :examples => [:build_examples] do
-  system('cd examples && ruby run_all.rb')
-end
+# task :examples => [:build_examples] do
+#   system('cd examples && ruby run_all.rb')
+# end
 
 task :default => [:all]
 

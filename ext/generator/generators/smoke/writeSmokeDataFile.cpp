@@ -21,6 +21,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMap>
+#include <map>
 #include <QTextStream>
 
 #include <type.h>
@@ -396,7 +397,7 @@ void SmokeDataFile::write()
     // munged name => index
     QMap<QString, int> methodNames;
     // class => list of munged names with possible methods or enum members
-    QHash<const Class*, QMap<QString, QList<const Member*> > > classMungedNames;
+    QHash<const Class*, std::map<QString, QList<const Member*> > > classMungedNames;
     
     currentIdx = 1;
     for (QMap<QString, int>::const_iterator iter = classIndex.constBegin(); iter != classIndex.constEnd(); iter++) {
@@ -405,7 +406,7 @@ void SmokeDataFile::write()
         bool isDeclaredVirtual = declaredVirtualMethods.contains(klass);
         if (isExternal && !isDeclaredVirtual)
             continue;
-        QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
+        std::map<QString, QList<const Member*> >& map = classMungedNames[klass];
         foreach (const Method& meth, klass->methods()) {
             if (meth.access() == Access_private)
                 continue;
@@ -646,18 +647,18 @@ void SmokeDataFile::write()
     QHash<const Class*, QHash<QString, int> > ambigiousIds;
     i = 1;
     // ambigious method list
-    for (QHash<const Class*, QMap<QString, QList<const Member*> > >::const_iterator iter = classMungedNames.constBegin();
+    for (QHash<const Class*, std::map<QString, QList<const Member*> > >::const_iterator iter = classMungedNames.constBegin();
          iter != classMungedNames.constEnd(); iter++)
     {
         const Class* klass = iter.key();
-        const QMap<QString, QList<const Member*> >& map = iter.value();
+        const std::map<QString, QList<const Member*> >& map = iter.value();
         
-        for (QMap<QString, QList<const Member*> >::const_iterator munged_it = map.constBegin();
-             munged_it != map.constEnd(); munged_it++)
+        for (std::map<QString, QList<const Member*> >::const_iterator munged_it = map.begin();
+             munged_it != map.end(); munged_it++)
         {
-            if (munged_it.value().size() < 2)
+            if (munged_it->second.size() < 2)
                 continue;
-            foreach (const Member* member, munged_it.value()) {
+            foreach (const Member* member, munged_it->second) {
                 out << "    " << methodIdx[member] << ',';
                 
                 // comment
@@ -675,8 +676,8 @@ void SmokeDataFile::write()
                 out << "\n";
             }
             out << "    0,\n";
-            ambigiousIds[klass][munged_it.key()] = i;
-            i += munged_it.value().size() + 1;
+            ambigiousIds[klass][munged_it->first] = i;
+            i += munged_it->second.size() + 1;
         }
     }
 
@@ -692,22 +693,22 @@ void SmokeDataFile::write()
         if (externalClasses.contains(klass))
             continue;
         
-        QMap<QString, QList<const Member*> >& map = classMungedNames[klass];
-        for (QMap<QString, QList<const Member*> >::const_iterator munged_it = map.constBegin(); munged_it != map.constEnd(); munged_it++) {
+        std::map<QString, QList<const Member*> >& map = classMungedNames[klass];
+        for (std::map<QString, QList<const Member*> >::const_iterator munged_it = map.begin(); munged_it != map.end(); munged_it++) {
             
             // class index, munged name index
-            out << "    {" << classIndex[iter.key()] << ", " << methodNames[munged_it.key()] << ", ";
+            out << "    {" << classIndex[iter.key()] << ", " << methodNames[munged_it->first] << ", ";
             
             // if there's only one matching method for this class and the munged name, insert the index into methodss
-            if (munged_it.value().size() == 1) {
-                out << methodIdx[munged_it.value().first()];
+            if (munged_it->second.size() == 1) {
+                out << methodIdx[munged_it->second.first()];
             } else {
                 // negative index into ambigious methods list
-                out << '-' << ambigiousIds[klass][munged_it.key()];
+                out << '-' << ambigiousIds[klass][munged_it->first];
             }
             out << "},";
             // comment
-            out << "\t// " << klass->toString() << "::" << munged_it.key();
+            out << "\t// " << klass->toString() << "::" << munged_it->first;
             out << "\n";
             methodMapCount++;
         }

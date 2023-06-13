@@ -133,14 +133,14 @@ void TypeCompiler::setRealType()
     } else if ((e = dynamic_cast<Enum*>(type))) {
         m_realType = Type(e, isConstant(), isVolatile());
     } else {
-        if (!m_templateArgs.isEmpty() && m_type.count() > 1) {
+        if (!m_templateArgs.empty() && m_type.count() > 1) {
             typeName = QString();
             // only go to the one before the last - the rest will be added as template parameters to the type directly
             for (int i = 0; i < m_type.count() - 1; i++) {
                 typeName += m_type[i];
                 
                 // do we have template parameters for this part?
-                if (m_templateArgs.contains(i)) {
+                if (m_templateArgs.find(i) != m_templateArgs.end()) {
                     typeName += "< ";
                     for (int j = 0; j < m_templateArgs[i].count(); j++) {
                         if (j > 0) typeName += ", ";
@@ -156,7 +156,7 @@ void TypeCompiler::setRealType()
     }
     
     // only add template parameters if they belong to the last part of a qualified type
-    if (m_templateArgs.contains(m_type.count() - 1) && m_realType.templateArguments().isEmpty())
+    if (m_templateArgs.find(m_type.count() - 1) != m_templateArgs.end() && m_realType.templateArguments().isEmpty())
         m_realType.setTemplateArguments(m_templateArgs[m_type.count() - 1]);
 }
 
@@ -242,7 +242,11 @@ void TypeCompiler::visitName(NameAST *node)
   NameCompiler name_cc(m_session, m_visitor);
   name_cc.run(node);
   m_type = name_cc.qualifiedName();
-  m_templateArgs = name_cc.templateArguments();
+  m_templateArgs.clear();
+  QMap<int, QList<Type> > m = name_cc.templateArguments();
+  for(QMap<int, QList<Type> >::iterator it = m.begin(); it != m.end(); it++) {
+    m_templateArgs.insert(std::pair<int, QList<Type> >(it.key(), it.value()));
+  }
 }
 
 QStringList TypeCompiler::cvString() const

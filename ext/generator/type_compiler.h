@@ -28,6 +28,7 @@
 #include <QtCore/QStringList>
 #include <QtCore/QList>
 #include <QtCore/QVector>
+#include <map>
 
 class ParseSession;
 class GeneratorVisitor;
@@ -73,7 +74,7 @@ private:
   Type m_realType;
   bool isRef;
   QVector<bool> pointerDepth;
-  QMap<int, QList<Type> > m_templateArgs;
+  std::map<int, QList<Type> > m_templateArgs;
 };
 
 #endif // TYPE_COMPILER_H
